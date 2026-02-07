@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Float, OrbitControls, PerspectiveCamera, useScroll } from '@react-three/drei'
-import React, { useMemo, useRef } from 'react'
+import React, { useLayoutEffect, useMemo, useRef } from 'react'
 import Background from './Background'
 import { Airplane } from './Airplane'
 import { Cloud } from './Cloud'
@@ -8,6 +8,7 @@ import  * as THREE  from 'three';
 import { useFrame } from '@react-three/fiber'
 import Textsection from './Textsection'
 import { MathUtils } from 'three';
+import gsap from 'gsap/all'
 
 const LINE_NB_POINTS = 1000;
 const CURVE_DISTANCE = 250;
@@ -35,8 +36,8 @@ const Experience = () => {
 
   const shape = useMemo (()=>{
     const shape = new THREE.Shape();
-    shape.moveTo(0,-0.8);
-    shape.lineTo(0,0.8);
+    shape.moveTo(0,-0.1);
+    shape.lineTo(0,0.1);
 
     return shape;
   },[curve])
@@ -132,6 +133,8 @@ We have a wide range of beverages!`,
     lerpedScrollOffset = Math.max(lerpedScrollOffset, 0);
 
     lastScroll.current = lerpedScrollOffset;
+
+    tl.current.seek(lerpedScrollOffset * tl.current.duration());
     const curPoint  = curve.getPoint(lerpedScrollOffset);
 
     cameraRef.current.position.lerp(curPoint,delta * 24)
@@ -189,6 +192,222 @@ We have a wide range of beverages!`,
 
   })
 
+  const tl = useRef();
+  const backgroundColors  = useRef({
+    colorA: "#3535cc",
+    colorB: "#abaadd",
+  })
+
+  const colorSets = [
+  { colorA: "#001da0", colorB: "#349942" }, // deep blue-gray
+  { colorA: "#3a2f3d", colorB: "#5a4b60" }, // dusty purple
+  { colorA: "#bdb717", colorB: "#51346a" }, // cold steel
+  { colorA: "#3b3a36", colorB: "#5c5a54" }, // warm concrete
+  { colorA: "#d6701d", colorB: "#7d183f" }, // night fog
+  { colorA: "#3d3a44", colorB: "#5b5763" }, // soft violet gray
+  { colorA: "#2f3430", colorB: "#4d554f" }, // moss shadow
+  { colorA: "#383838", colorB: "#555555" }, // neutral studio gray
+  { colorA: "#332f2e", colorB: "#544f4b" }, // muted earth
+  { colorA: "#263238", colorB: "#455a64" }, // calm slate
+];
+  
+  useLayoutEffect(()=>{
+    tl.current = gsap.timeline();
+
+  colorSets.forEach(({ colorA, colorB }) => {
+  tl.current.to(backgroundColors.current, {
+    duration: 1,
+    ease: "power2.inOut",
+    colorA,
+    colorB,
+  });
+});
+
+    tl.current. pause()
+  },[])
+
+  const clouds = useMemo(
+    () => [
+      // STARTING
+      {
+        position: new THREE.Vector3(-3.5, -3.2, -7),
+      },
+      {
+        position: new THREE.Vector3(3.5, -4, -10),
+      },
+      {
+        scale: new THREE.Vector3(4, 4, 4),
+        position: new THREE.Vector3(-18, 0.2, -68),
+        rotation: new THREE.Euler(-Math.PI / 5, Math.PI / 6, 0),
+      },
+      {
+        scale: new THREE.Vector3(2.5, 2.5, 2.5),
+        position: new THREE.Vector3(10, -1.2, -52),
+      },
+      // FIRST POINT
+      {
+        scale: new THREE.Vector3(4, 4, 4),
+        position: new THREE.Vector3(
+          curvePoints[1].x + 10,
+          curvePoints[1].y - 4,
+          curvePoints[1].z + 64
+        ),
+      },
+      {
+        scale: new THREE.Vector3(3, 3, 3),
+        position: new THREE.Vector3(
+          curvePoints[1].x - 20,
+          curvePoints[1].y + 4,
+          curvePoints[1].z + 28
+        ),
+        rotation: new THREE.Euler(0, Math.PI / 7, 0),
+      },
+      {
+        rotation: new THREE.Euler(0, Math.PI / 7, Math.PI / 5),
+        scale: new THREE.Vector3(5, 5, 5),
+        position: new THREE.Vector3(
+          curvePoints[1].x - 13,
+          curvePoints[1].y + 4,
+          curvePoints[1].z - 62
+        ),
+      },
+      {
+        rotation: new THREE.Euler(Math.PI / 2, Math.PI / 2, Math.PI / 3),
+        scale: new THREE.Vector3(5, 5, 5),
+        position: new THREE.Vector3(
+          curvePoints[1].x + 54,
+          curvePoints[1].y + 2,
+          curvePoints[1].z - 82
+        ),
+      },
+      {
+        scale: new THREE.Vector3(5, 5, 5),
+        position: new THREE.Vector3(
+          curvePoints[1].x + 8,
+          curvePoints[1].y - 14,
+          curvePoints[1].z - 22
+        ),
+      },
+      // SECOND POINT
+      {
+        scale: new THREE.Vector3(3, 3, 3),
+        position: new THREE.Vector3(
+          curvePoints[2].x + 6,
+          curvePoints[2].y - 7,
+          curvePoints[2].z + 50
+        ),
+      },
+      {
+        scale: new THREE.Vector3(2, 2, 2),
+        position: new THREE.Vector3(
+          curvePoints[2].x - 2,
+          curvePoints[2].y + 4,
+          curvePoints[2].z - 26
+        ),
+      },
+      {
+        scale: new THREE.Vector3(4, 4, 4),
+        position: new THREE.Vector3(
+          curvePoints[2].x + 12,
+          curvePoints[2].y + 1,
+          curvePoints[2].z - 86
+        ),
+        rotation: new THREE.Euler(Math.PI / 4, 0, Math.PI / 3),
+      },
+      // THIRD POINT
+      {
+        scale: new THREE.Vector3(3, 3, 3),
+        position: new THREE.Vector3(
+          curvePoints[3].x + 3,
+          curvePoints[3].y - 10,
+          curvePoints[3].z + 50
+        ),
+      },
+      {
+        scale: new THREE.Vector3(3, 3, 3),
+        position: new THREE.Vector3(
+          curvePoints[3].x - 10,
+          curvePoints[3].y,
+          curvePoints[3].z + 30
+        ),
+        rotation: new THREE.Euler(Math.PI / 4, 0, Math.PI / 5),
+      },
+      {
+        scale: new THREE.Vector3(4, 4, 4),
+        position: new THREE.Vector3(
+          curvePoints[3].x - 20,
+          curvePoints[3].y - 5,
+          curvePoints[3].z - 8
+        ),
+        rotation: new THREE.Euler(Math.PI, 0, Math.PI / 5),
+      },
+      {
+        scale: new THREE.Vector3(5, 5, 5),
+        position: new THREE.Vector3(
+          curvePoints[3].x + 0,
+          curvePoints[3].y - 5,
+          curvePoints[3].z - 98
+        ),
+        rotation: new THREE.Euler(0, Math.PI / 3, 0),
+      },
+      // FOURTH POINT
+      {
+        scale: new THREE.Vector3(2, 2, 2),
+        position: new THREE.Vector3(
+          curvePoints[4].x + 3,
+          curvePoints[4].y - 10,
+          curvePoints[4].z + 2
+        ),
+      },
+      {
+        scale: new THREE.Vector3(3, 3, 3),
+        position: new THREE.Vector3(
+          curvePoints[4].x + 24,
+          curvePoints[4].y - 6,
+          curvePoints[4].z - 42
+        ),
+        rotation: new THREE.Euler(Math.PI / 4, 0, Math.PI / 5),
+      },
+      {
+        scale: new THREE.Vector3(3, 3, 3),
+        position: new THREE.Vector3(
+          curvePoints[4].x - 4,
+          curvePoints[4].y + 9,
+          curvePoints[4].z - 62
+        ),
+        rotation: new THREE.Euler(Math.PI / 3, 0, Math.PI / 3),
+      },
+      // FINAL
+      {
+        scale: new THREE.Vector3(3, 3, 3),
+        position: new THREE.Vector3(
+          curvePoints[7].x + 12,
+          curvePoints[7].y - 5,
+          curvePoints[7].z + 60
+        ),
+        rotation: new THREE.Euler(-Math.PI / 4, -Math.PI / 6, 0),
+      },
+      {
+        scale: new THREE.Vector3(3, 3, 3),
+        position: new THREE.Vector3(
+          curvePoints[7].x - 12,
+          curvePoints[7].y + 5,
+          curvePoints[7].z + 120
+        ),
+        rotation: new THREE.Euler(Math.PI / 4, Math.PI / 6, 0),
+      },
+      {
+        scale: new THREE.Vector3(4, 4, 4),
+        position: new THREE.Vector3(
+          curvePoints[7].x,
+          curvePoints[7].y,
+          curvePoints[7].z
+        ),
+        rotation: new THREE.Euler(0, 0, 0),
+      },
+    ],
+    []
+  );
   
 
 
@@ -198,7 +417,7 @@ We have a wide range of beverages!`,
     
 
     <group ref={cameraRef} >
-    <Background/>
+    <Background backgroundColors={backgroundColors}/>
     <group ref={cameraRail}>
     <PerspectiveCamera position={[0,0,5]} fov={30}  makeDefault />
     </group>
@@ -231,12 +450,11 @@ We have a wide range of beverages!`,
     </mesh>
     </group>
 
-    <Cloud  scale={[1,1, 1]} position={[-5.5,-1.2,-7]} />
-    <Cloud  scale={[1,1, 1]} position={[5.5,-1,-10]} rotation-y={Math.PI} />
-    <Cloud  scale={[1,1,1]} rotation-y={Math.PI / 3} position={[-10.5,0.2,-42]}/>
-    <Cloud  scale={[0.4,0.4, 0.4]} rotation-y={Math.PI / 9} position={[3,-0.2,-22]}/>
-    <Cloud  scale={[0.5,0.5, 2]}  position={[-7,-0.5,-53]}/>
-    <Cloud  scale={[0.5 ,0.5, 2]}  position={[4,-1.5,-100]}/>
+    {
+      clouds.map((cloud,index)=>(
+        <Cloud {...cloud} key={index} />
+      ))
+    }
     </>
   )
 }

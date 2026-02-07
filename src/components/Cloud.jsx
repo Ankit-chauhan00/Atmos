@@ -5,6 +5,7 @@ Command: npx gltfjsx@6.5.3 public/models/cloud/model.gltf
 
 import React from 'react'
 import { useGLTF } from '@react-three/drei'
+import { fadeOnBeforeCompile } from '../../utils/fadematerial'
 
 export function Cloud({ opacity = 1, ...props }) {
   const { nodes, materials } = useGLTF('/models/cloud/model.gltf')
@@ -13,6 +14,7 @@ export function Cloud({ opacity = 1, ...props }) {
     <group {...props} dispose={null}>
       <mesh geometry={nodes.Mball001.geometry}>
         <meshStandardMaterial
+        onBeforeCompile={fadeOnBeforeCompile}
           {...materials['lambert2SG.001']}
           transparent
           opacity={opacity}
