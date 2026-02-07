@@ -7,6 +7,7 @@ import { Cloud } from './Cloud'
 import  * as THREE  from 'three';
 import { useFrame } from '@react-three/fiber'
 import Textsection from './Textsection'
+import { MathUtils } from 'three';
 
 const LINE_NB_POINTS = 1000;
 const CURVE_DISTANCE = 250;
@@ -40,30 +41,98 @@ const Experience = () => {
     return shape;
   },[curve])
 
-  
-  const textsection = useMemo(()=>{
-      return[
-        {
-        position: new THREE.Vector3(
+   const textSections = useMemo(() => {
+    return [
+      {
+        cameraRailDist: -1,
+        position: new  THREE.Vector3(
           curvePoints[1].x - 3,
           curvePoints[1].y,
-          curvePoints[1].z,     
+          curvePoints[1].z
         ),
-        subtitle:   `Welcome to Wawatmos, Have a seat and Enjoy the ride`,
+        subtitle: `Welcome to Wawatmos,
+Have a seat and enjoy the ride!`,
       },
-      ]
-  },[])
+      {
+        cameraRailDist: 1.5,
+        position: new THREE.Vector3(
+          curvePoints[2].x + 2,
+          curvePoints[2].y,
+          curvePoints[2].z
+        ),
+        title: "Services",
+        subtitle: `Do you want a drink?
+We have a wide range of beverages!`,
+      },
+      {
+        cameraRailDist: -1,
+        position: new THREE.Vector3(
+          curvePoints[3].x - 3,
+          curvePoints[3].y,
+          curvePoints[3].z
+        ),
+        title: "Fear of flying?",
+        subtitle: `Our flight attendants will help you have a great journey`,
+      },
+      {
+        cameraRailDist: 1.5,
+        position: new THREE.Vector3(
+          curvePoints[4].x + 3.5,
+          curvePoints[4].y,
+          curvePoints[4].z - 12
+        ),
+        title: "Movies",
+        subtitle: `We provide a large selection of medias, we highly recommend you Porco Rosso during the flight`,
+      },
+    ];
+  }, []);
+
 
 
   const cameraRef = useRef();
   const scroll = useScroll();
   const airplane = useRef();
+  const cameraRail = useRef();
+  const lastScroll = useRef(0)
 
   useFrame((_state,delta)=>{
 
     const scrollOffset = Math.max(0, scroll.offset);
-    const curPoint  = curve.getPoint(scrollOffset)
+    
 
+    let friction = 1;
+    let resetCameraRail = true;
+
+    // Look to close text Section
+    textSections.forEach((textsection)=>{
+      const distance = textsection.position.distanceTo(cameraRef.current.position);
+
+      if(distance < FRICTION_DISTANCE){
+        friction = Math.max(distance / FRICTION_DISTANCE, 0.1);
+        const targetCameraRailPosition = new THREE.Vector3(
+          (1 - distance / FRICTION_DISTANCE) * textsection.cameraRailDist,
+          0,
+          0,
+        )
+
+        cameraRail.current.position.lerp(targetCameraRailPosition, delta);
+        resetCameraRail = false;
+      }
+    })
+
+    if(resetCameraRail){
+      const targetCameraRailPosition = new THREE.Vector3(0,0,0);
+      cameraRail.current.position.lerp(targetCameraRailPosition, delta);
+    }
+
+    //Calculate Lerped scroll oFFset
+    let lerpedScrollOffset = MathUtils.lerp(lastScroll.current, scrollOffset, delta * friction);
+
+    lerpedScrollOffset = Math.min(lerpedScrollOffset, 1);
+    lerpedScrollOffset = Math.max(lerpedScrollOffset, 0);
+
+    lastScroll.current = lerpedScrollOffset;
+    const curPoint  = curve.getPoint(lerpedScrollOffset);
 
     cameraRef.current.position.lerp(curPoint,delta * 24)
 
@@ -130,7 +199,9 @@ const Experience = () => {
 
     <group ref={cameraRef} >
     <Background/>
+    <group ref={cameraRail}>
     <PerspectiveCamera position={[0,0,5]} fov={30}  makeDefault />
+    </group>
     <group ref={airplane} >
     <Float floatIntensity={2}  speed={2} >
     <Airplane rotation-y={Math.PI / 2} scale={[0.2,0.2,0.2]} position-y={0.1} />
@@ -139,8 +210,8 @@ const Experience = () => {
     </group>
 
     {/* Text */}
-    {
-  textsection.map((section, index) => (
+{
+  textSections.map((section, index) => (
     <Textsection {...section} key={index} />
   ))
 }

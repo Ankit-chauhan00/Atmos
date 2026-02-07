@@ -8,7 +8,7 @@ const App = () => {
     <>
     <Canvas>
       <color attach="background" args={["#ececec"]} />
-      <ScrollControls pages={50} damping={1} >
+      <ScrollControls pages={30} damping={0.5} >
       <Experience/>
       </ScrollControls>
     </Canvas>
