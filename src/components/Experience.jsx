@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { Float, OrbitControls, PerspectiveCamera, useScroll } from '@react-three/drei'
 import React, { useMemo, useRef } from 'react'
 import Background from './Background'
@@ -5,68 +6,118 @@ import { Airplane } from './Airplane'
 import { Cloud } from './Cloud'
 import  * as THREE  from 'three';
 import { useFrame } from '@react-three/fiber'
+import Textsection from './Textsection'
 
-const LINE_NB_POINTS = 2000;
+const LINE_NB_POINTS = 1000;
+const CURVE_DISTANCE = 250;
+const CURVE_AHEAD_CAMERA = 0.008;
+const CURVE_AHEAD_AIRPLANE = 0.02;
+const AIRPLANE_MAX_ANGLE = 35;
+const FRICTION_DISTANCE = 42;
 
 const Experience = () => {
 
+  const curvePoints =  useMemo(()=>[
+    new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, 0, -CURVE_DISTANCE),
+      new THREE.Vector3(100, 0, -2 * CURVE_DISTANCE),
+      new THREE.Vector3(-100, 0, -3 * CURVE_DISTANCE),
+      new THREE.Vector3(100, 0, -4 * CURVE_DISTANCE),
+      new THREE.Vector3(0, 0, -5 * CURVE_DISTANCE),
+      new THREE.Vector3(0, 0, -6 * CURVE_DISTANCE),
+      new THREE.Vector3(0, 0, -7 * CURVE_DISTANCE),
+  ],[])
+
   const curve = useMemo(()=>{
-    return new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0,0,0),
-      new THREE.Vector3(0,0,-10),
-      new THREE.Vector3(-2,0,-20),
-      new THREE.Vector3(-3,0,-30),
-      new THREE.Vector3(0,0,-40),
-      new THREE.Vector3(5,0,-50),
-      new THREE.Vector3(7,0,-60),
-      new THREE.Vector3(5,0,-70),
-      new THREE.Vector3(0,0,-80),
-      new THREE.Vector3(0,0,-90),
-      new THREE.Vector3(0,0,-100),
-    ],false,"catmullrom",0.5)
+    return new THREE.CatmullRomCurve3(curvePoints,false,"catmullrom",0.5)
   })
 
   const shape = useMemo (()=>{
     const shape = new THREE.Shape();
-    shape.moveTo(0,-0.2);
-    shape.lineTo(0,0.2);
+    shape.moveTo(0,-0.8);
+    shape.lineTo(0,0.8);
 
     return shape;
   },[curve])
 
-  const linePoints = useMemo(()=>{
-    return curve.getPoints(LINE_NB_POINTS);
-  },[curve]);
+  
+  const textsection = useMemo(()=>{
+      return[
+        {
+        position: new THREE.Vector3(
+          curvePoints[1].x - 3,
+          curvePoints[1].y,
+          curvePoints[1].z,     
+        ),
+        subtitle:   `Welcome to Wawatmos, Have a seat and Enjoy the ride`,
+      },
+      ]
+  },[])
+
 
   const cameraRef = useRef();
   const scroll = useScroll();
   const airplane = useRef();
 
   useFrame((_state,delta)=>{
-    
-    const curPointIndex = Math.min(
-      Math.round(scroll.offset * linePoints.length), linePoints.length - 1
-    )
-    const curPoint = linePoints[curPointIndex];
-    const pointAhead =  linePoints[Math.min(curPointIndex+1, linePoints.length)]
 
-    const xDisplacement = (pointAhead.x - curPoint.x) * 80;
+    const scrollOffset = Math.max(0, scroll.offset);
+    const curPoint  = curve.getPoint(scrollOffset)
 
-    const angleRotation = (xDisplacement < 0 ? 1: -1)*
-    Math.min(Math.abs(xDisplacement),Math.PI / 3);
-
-    const targetAirplaneQuaterion = new THREE.Quaternion().setFromEuler(
-      new THREE.Euler(
-        airplane.current.rotation.x,
-        airplane.current.rotation.y,
-        angleRotation,
-
-      )
-    )
-
-    airplane.current.quaternion.slerp(targetAirplaneQuaterion, delta * 2)
 
     cameraRef.current.position.lerp(curPoint,delta * 24)
+
+    const lookAtPoint =  curve.getPoint(Math.min(scrollOffset + CURVE_AHEAD_CAMERA,1));
+
+    const currentLookAt = cameraRef.current.getWorldDirection(
+      new THREE.Vector3()
+    );
+
+    const targetLookAt = new THREE.Vector3()
+    .subVectors(curPoint, lookAtPoint)
+    .normalize();
+
+    const lookAt = currentLookAt.lerp(targetLookAt, delta * 24);
+    cameraRef.current.lookAt(
+      cameraRef.current.position.clone().add(lookAt)
+    )
+    
+   // Airplane Rotation
+   const tangent = curve.getTangent(scrollOffset + CURVE_AHEAD_AIRPLANE)
+
+   const nonLerpLookAt = new THREE.Group();
+   nonLerpLookAt.position.copy(curPoint);
+   nonLerpLookAt.lookAt(nonLerpLookAt.position.clone().add(targetLookAt));
+
+   tangent.applyAxisAngle(
+    new THREE.Vector3(0,1,0),
+    -nonLerpLookAt.rotation.y
+   )
+
+   let angle = Math.atan2(-tangent.z, tangent.x);
+   angle = -Math.PI /2 + angle;
+
+   let angleDegrees = (angle * 180) / Math.PI;
+   angleDegrees *= 2.3;
+
+   if(angleDegrees < 0){
+    angleDegrees = Math.max(angleDegrees, -AIRPLANE_MAX_ANGLE)
+   }
+   if(angleDegrees > 0){
+    angleDegrees = Math.max(angleDegrees, AIRPLANE_MAX_ANGLE)
+   }
+
+   angle = (angleDegrees * Math.PI) / 180;
+
+   const targetAirplaneQuaternion =  new THREE.Quaternion().setFromEuler(
+    new THREE.Euler(
+      airplane.current.rotation.x,
+      airplane.current.rotation.y,
+      angle
+    )
+   )
+   airplane.current.quaternion.slerp(targetAirplaneQuaternion, delta *2)
+
   })
 
   
@@ -74,6 +125,7 @@ const Experience = () => {
 
   return (
     <>
+    <directionalLight position={[0,3,1]} intensity={0.1} />
     
 
     <group ref={cameraRef} >
@@ -85,6 +137,13 @@ const Experience = () => {
     </Float>
     </group>
     </group>
+
+    {/* Text */}
+    {
+  textsection.map((section, index) => (
+    <Textsection {...section} key={index} />
+  ))
+}
 
     <group position-y={-2} >
     <mesh>
@@ -101,11 +160,12 @@ const Experience = () => {
     </mesh>
     </group>
 
-    <Cloud opacity={0.7} scale={[0.3,0.3, 0.4]} position={[-3,1,-3]} />
-    <Cloud opacity={0.7} scale={[0.3,0.3, 0.4]} position={[3.5,-0.5,-2]} />
-    <Cloud opacity={0.7} scale={[0.3,0.3, 0.4]} rotation-y={Math.PI / 9} position={[2,1,-20]}/>
-    <Cloud opacity={0.7} scale={[0.4,0.4, 0.4]} rotation-y={Math.PI / 9} position={[1,-0.2,-12]}/>
-    <Cloud opacity={0.7} scale={[0.4,0.4, 0.4]} rotation-y={Math.PI / 9} position={[-4,-0.2,-12]}/>
+    <Cloud  scale={[1,1, 1]} position={[-5.5,-1.2,-7]} />
+    <Cloud  scale={[1,1, 1]} position={[5.5,-1,-10]} rotation-y={Math.PI} />
+    <Cloud  scale={[1,1,1]} rotation-y={Math.PI / 3} position={[-10.5,0.2,-42]}/>
+    <Cloud  scale={[0.4,0.4, 0.4]} rotation-y={Math.PI / 9} position={[3,-0.2,-22]}/>
+    <Cloud  scale={[0.5,0.5, 2]}  position={[-7,-0.5,-53]}/>
+    <Cloud  scale={[0.5 ,0.5, 2]}  position={[4,-1.5,-100]}/>
     </>
   )
 }
