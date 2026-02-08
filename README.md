@@ -1,16 +1,104 @@
-# React + Vite
+# ✈️ Atmos — Cinematic 3D Web Experience
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Atmos is an interactive, cinematic 3D flight experience built for the web using **React Three Fiber**, **Three.js**, and **GSAP**.  
+The project focuses on smooth animations, scroll-driven camera movement, and responsive 3D layouts across devices.
 
-Currently, two official plugins are available:
+🌐 **Live Demo:** https://atmos-silk.vercel.app/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## 🚀 Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- ✈️ Curve-based airplane flight animation
+- 🎥 Scroll-driven cinematic camera movement
+- 🎨 Dynamic background color transitions using GSAP
+- ☁️ Procedurally placed 3D clouds
+- 🧭 Context-based play & animation control
+- 📱 Fully responsive (desktop & mobile)
+- ⚡ Optimized with `useMemo`, refs, and controlled re-renders
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Tech Stack
+
+- **React**
+- **React Three Fiber**
+- **Three.js**
+- **GSAP**
+- **@react-three/drei**
+- **Vite**
+
+---
+
+## 🧠 What I Learned
+
+- Synchronizing **GSAP timelines** with `useFrame`
+- Managing **camera logic** in 3D space
+- Scroll-based motion using `ScrollControls`
+- Performance optimization in WebGL scenes
+- Structuring large R3F projects cleanly
+- Making 3D experiences responsive across devices
+
+---
+
+## 📂 Project Structure
+
+src/
+├── components/
+│ ├── Airplane.jsx
+│ ├── Background.jsx
+│ ├── Cloud.jsx
+│ ├── TextSection.jsx
+│ └── Experience.jsx
+│
+├── context/
+│ └── Play.jsx
+│
+├── utils/
+│ └── fadeMaterial.js
+│
+├── App.jsx
+├── main.jsx
+└── styles.css
+
+
+---
+
+## 📱 Responsiveness
+
+- Adaptive camera **FOV & positioning**
+- Mobile-friendly interaction and text spacing
+- Optimized for both portrait and landscape screens
+
+---
+
+## 🧪 Performance Notes
+
+- Heavy calculations memoized
+- Geometry and vectors reused
+- GSAP animations isolated from render loop
+- No unnecessary React re-renders
+
+---
+
+## 🔮 Future Improvements
+
+- Loading screen with progress indicator
+- Sound design with mute toggle
+- Keyboard / touch interaction support
+- Performance stats overlay
+- More cinematic camera transitions
+
+---
+
+## ⭐ Support
+
+If you like this project or learned something from it, please consider giving it a **⭐ on GitHub** — it really helps and motivates me to build more!
+
+---
+
+## 👋 Connect With Me
+
+Feel free to connect or share feedback — I’m always open to learning and improving.
+
+Happy coding! 🚀
