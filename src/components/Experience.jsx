@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Float, OrbitControls, PerspectiveCamera, useScroll } from '@react-three/drei'
-import React, { useLayoutEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import Background from './Background'
 import { Airplane } from './Airplane'
 import { Cloud } from './Cloud'
@@ -9,6 +9,7 @@ import { useFrame } from '@react-three/fiber'
 import Textsection from './Textsection'
 import { MathUtils } from 'three';
 import gsap from 'gsap/all'
+import { usePlay } from '../context/Play'
 
 const LINE_NB_POINTS = 1000;
 const CURVE_DISTANCE = 250;
@@ -32,7 +33,10 @@ const Experience = () => {
 
   const curve = useMemo(()=>{
     return new THREE.CatmullRomCurve3(curvePoints,false,"catmullrom",0.5)
-  })
+  },[curvePoints])
+
+  const sceneOpacity = useRef(0);
+  const lineMaterialRef = useRef();
 
   const shape = useMemo (()=>{
     const shape = new THREE.Shape();
@@ -96,7 +100,57 @@ We have a wide range of beverages!`,
   const cameraRail = useRef();
   const lastScroll = useRef(0)
 
+  const camera = useRef()
+
+  const {play, setHasScroll, end, setEnd} = usePlay()
+
+  const planeOutTl =useRef();
+
+
   useFrame((_state,delta)=>{
+
+    if(window.innerWidth >  window.innerHeight){
+      // Landscape
+      camera.current.fov = 30;
+      camera.current.position.z = 5;
+    }else{
+      // potrait
+      camera.current.fov = 80;
+      camera.current.position.z = 5;
+
+    }
+
+
+
+    if(lastScroll.current <= 0 && scroll.offset>0){
+      setHasScroll(true); 
+    }
+
+   
+
+    if(play && sceneOpacity.current < 1){
+      sceneOpacity.current = THREE.MathUtils.lerp(
+        sceneOpacity.current,
+        1,
+        delta * 0.1
+      )
+    }
+
+
+
+    if(end && sceneOpacity.current < 1){
+      sceneOpacity.current = THREE.MathUtils.lerp(
+        sceneOpacity.current,
+        0,
+        delta
+      )
+    }
+      lineMaterialRef.current.opacity = sceneOpacity.current;
+
+      if(end){
+        return
+      }
+
 
     const scrollOffset = Math.max(0, scroll.offset);
     
@@ -190,6 +244,11 @@ We have a wide range of beverages!`,
    )
    airplane.current.quaternion.slerp(targetAirplaneQuaternion, delta *2)
 
+   if(cameraRef.current.position.z < curvePoints[curvePoints.length -1].z + 100){
+    setEnd(true)
+    planeOutTl.current.play()
+   }
+
   })
 
   const tl = useRef();
@@ -201,7 +260,7 @@ We have a wide range of beverages!`,
   const colorSets = [
   { colorA: "#001da0", colorB: "#349942" }, // deep blue-gray
   { colorA: "#3a2f3d", colorB: "#5a4b60" }, // dusty purple
-  { colorA: "#bdb717", colorB: "#51346a" }, // cold steel
+  { colorA: "#2e8b4f", colorB: "#51346a" }, // cold steel
   { colorA: "#3b3a36", colorB: "#5c5a54" }, // warm concrete
   { colorA: "#d6701d", colorB: "#7d183f" }, // night fog
   { colorA: "#3d3a44", colorB: "#5b5763" }, // soft violet gray
@@ -210,21 +269,63 @@ We have a wide range of beverages!`,
   { colorA: "#332f2e", colorB: "#544f4b" }, // muted earth
   { colorA: "#263238", colorB: "#455a64" }, // calm slate
 ];
+
+  const  planeInTl = useRef();
   
-  useLayoutEffect(()=>{
-    tl.current = gsap.timeline();
+  useLayoutEffect(() => {
+  if (!airplane.current) return;
+
+  tl.current = gsap.timeline();
 
   colorSets.forEach(({ colorA, colorB }) => {
-  tl.current.to(backgroundColors.current, {
-    duration: 1,
-    ease: "power2.inOut",
-    colorA,
-    colorB,
+    tl.current.to(backgroundColors.current, {
+      duration: 1,
+      ease: "power2.inOut",
+      colorA,
+      colorB,
+    });
   });
-});
 
-    tl.current. pause()
-  },[])
+  tl.current.pause();
+
+  planeInTl.current = gsap.timeline({ paused: true });
+
+  planeInTl.current.fromTo(
+    airplane.current.position,
+    { z: 5, y: -2 },
+    { z: 0, y: 0, duration: 3, ease: "power3.out" }
+  );
+
+  planeOutTl.current = gsap.timeline();
+  planeOutTl.current.pause();
+  planeOutTl.current.to(
+    airplane.current.position,{
+      duration: 10,
+      z:-250,
+      y: 10,
+    },0);
+
+    planeOutTl.current.to(
+      cameraRail.current.position,
+      {
+        duration:8,
+        y: 12,
+      },
+      0
+    )
+    planeOutTl.current.to(airplane.current.position,{
+      duration: 1,
+      z: -1000,
+    });
+  
+}, []);
+
+
+  useEffect(()=>{
+    if(play){
+      planeInTl.current.play();
+    }
+  },[play])
 
   const clouds = useMemo(
     () => [
@@ -419,7 +520,7 @@ We have a wide range of beverages!`,
     <group ref={cameraRef} >
     <Background backgroundColors={backgroundColors}/>
     <group ref={cameraRail}>
-    <PerspectiveCamera position={[0,0,5]} fov={30}  makeDefault />
+    <PerspectiveCamera ref={camera} position={[0,0,5]} fov={30}  makeDefault />
     </group>
     <group ref={airplane} >
     <Float floatIntensity={2}  speed={2} >
@@ -446,13 +547,13 @@ We have a wide range of beverages!`,
         }
       ]} />
 
-      <meshStandardMaterial color={"white"} opacity={0.7} transparent />
+      <meshStandardMaterial ref={lineMaterialRef} color={"white"} opacity={0.7} transparent />
     </mesh>
     </group>
 
     {
       clouds.map((cloud,index)=>(
-        <Cloud {...cloud} key={index} />
+        <Cloud sceneOpacity={sceneOpacity} {...cloud} key={index} />
       ))
     }
     </>
